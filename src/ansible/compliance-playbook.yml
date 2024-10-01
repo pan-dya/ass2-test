@@ -1,0 +1,12 @@
+---
+- name: Implement important enterprise compliance requirements
+  hosts: all_servers
+  remote_user: ubuntu
+  become: yes # sudo
+
+  tasks:
+  - name: Install cowsay
+    ansible.builtin.apt:
+      name: cowsay
+      state: present
+      update_cache: true

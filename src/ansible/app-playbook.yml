@@ -1,0 +1,56 @@
+---
+- name: Deploy Foo Application
+  hosts: app_servers
+  remote_user: ubuntu
+  become: yes
+  tasks:
+    - name: Update apt and install dependencies
+      apt:
+        update_cache: yes
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Run Foo App container
+      docker_container:
+        name: foo_app
+        image: mattcul/assignment2app:1.0.0
+        env:
+          PORT: "3001"
+          DB_HOSTNAME: "host.docker.internal"  # Using host.docker.internal
+          DB_PORT: "5432"
+          DB_USERNAME: pete
+          DB_PASSWORD: devops
+        published_ports:
+          - "8080:3001" 
+        etc_hosts:
+          host.docker.internal: host-gateway  
+        restart_policy: always
+        state: started
+        recreate: true
+
