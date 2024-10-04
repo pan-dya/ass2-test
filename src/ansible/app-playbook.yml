@@ -42,12 +42,12 @@
         image: mattcul/assignment2app:1.0.0
         env:
           PORT: "3001"
-          DB_HOSTNAME: "host.docker.internal"  # Using host.docker.internal
+          DB_HOSTNAME: "54.164.173.184"  # Using host.docker.internal
           DB_PORT: "5432"
           DB_USERNAME: pete
           DB_PASSWORD: devops
         published_ports:
-          - "8080:3001" 
+          - "0.0.0.0:80:3001" 
         etc_hosts:
           host.docker.internal: host-gateway  
         restart_policy: always
