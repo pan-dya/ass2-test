@@ -94,19 +94,36 @@ resource "aws_security_group" "vms" {
     cidr_blocks = ["0.0.0.0/0"]  # Change this if you want to restrict it
   }
 
+  # HTTP out
+  egress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # HTTPS out
   egress {
-    from_port   = 0
+    from_port   = 443
     to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # PostgreSQL out
+  egress {
+    from_port   = 5432
+    to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-output "vm_public_addresses" {
+output "vm_ip_addresses" {
   value = { for role_name, vm in aws_instance.servers : role_name => {
     public_hostname   = vm.public_dns,
     public_ip_address = vm.public_ip
+    private_ip_address = vm.private_ip
     }
   }
 }

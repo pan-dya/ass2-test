@@ -21,7 +21,7 @@
 
     - name: Add Docker repository
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
         state: present
 
     - name: Install Docker
@@ -42,7 +42,7 @@
         image: mattcul/assignment2app:1.0.0
         env:
           PORT: "3001"
-          DB_HOSTNAME: "54.164.173.184"  # Using host.docker.internal
+          DB_HOSTNAME: "{{ db_hostname }}"
           DB_PORT: "5432"
           DB_USERNAME: pete
           DB_PASSWORD: devops

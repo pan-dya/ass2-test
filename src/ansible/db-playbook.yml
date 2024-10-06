@@ -21,7 +21,7 @@
 
     - name: Add Docker repository
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
         state: present
 
     - name: Install Docker
@@ -36,6 +36,11 @@
         state: started
         enabled: true
 
+    - name: Copy snapshot SQL file to the server
+      copy:
+        src: "{{ playbook_dir }}/../misc/snapshot-prod-data.sql"
+        dest: /home/ubuntu/snapshot-prod-data.sql
+
     - name: Run PostgreSQL container
       docker_container:
         name: foo_db
@@ -45,9 +50,9 @@
           POSTGRES_PASSWORD: devops
           POSTGRES_DB: foo
         published_ports:
-          - "0.0.0.0:5432:5432"  
+          - "0.0.0.0:5432:5432"
         volumes:
-          - "/misc/snapshot-prod-data.sql:/docker-entrypoint-initdb.d/init.sql" 
+          - "/home/ubuntu/snapshot-prod-data.sql:/docker-entrypoint-initdb.d/snapshot-prod-data.sql"
         restart_policy: always
         state: started
         recreate: true
