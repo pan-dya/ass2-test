@@ -10,7 +10,7 @@ echo "Running Section A deployment script"
 echo "Testing AWS credentials"
 aws sts get-caller-identity
 
-path_to_ssh_key="~/.ssh/id_rsa"
+path_to_ssh_key="~/.ssh/new_id_rsa"
 
 cd infra
 echo "Initializing Terraform"
