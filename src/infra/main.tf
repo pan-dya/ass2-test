@@ -34,8 +34,8 @@ resource "aws_subnet" "public-subnet1" {
 #public-subnet2 creation
 resource "aws_subnet" "public-subnet2" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.subnet1_cidr
-  map_public_ip_on_launch = "false"
+  cidr_block              = var.subnet2_cidr
+  map_public_ip_on_launch = false
   availability_zone       = "us-east-1b"
   tags = {
     Name = "public-subnet2"
@@ -45,7 +45,7 @@ resource "aws_subnet" "public-subnet2" {
 #private-subnet1 creation
 resource "aws_subnet" "private-subnet1" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.subnet2_cidr
+  cidr_block        = var.subnet3_cidr
   availability_zone = "us-east-1b"
   tags = {
     Name = "private-subnet1"
@@ -71,6 +71,11 @@ resource "aws_route_table" "route" {
 #route 1
 resource "aws_route_table_association" "route1" {
   subnet_id      = aws_subnet.public-subnet1.id
+  route_table_id = aws_route_table.route.id
+}
+
+resource "aws_route_table_association" "route2" {
+  subnet_id      = aws_subnet.public-subnet2.id
   route_table_id = aws_route_table.route.id
 }
 
