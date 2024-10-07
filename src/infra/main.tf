@@ -120,7 +120,7 @@ resource "aws_security_group" "vms" {
 
   # SSH
   ingress {
-    from_port   = 0
+    from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -199,6 +199,7 @@ resource "aws_instance" "servers" {
   subnet_id = each.key == "db" ? aws_subnet.private-subnet1.id : aws_subnet.public-subnet1.id
   key_name        = aws_key_pair.admin.key_name
   security_groups = [aws_security_group.vms.id]
+  associate_public_ip_address = true
 
   tags = {
     Name = "${each.key}"
@@ -251,6 +252,9 @@ resource "aws_lb_listener" "listener_elb" {
   }
 }
 
+output "load_balancer_dns" {
+  value = aws_lb.external-alb.dns_name
+}
 
 output "vm_ip_addresses" {
   value = { for role_name, vm in aws_instance.servers : role_name => {
