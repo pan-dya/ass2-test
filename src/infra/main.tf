@@ -23,7 +23,7 @@ provider "aws" {
 resource "aws_subnet" "public-subnet1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.subnet1_cidr
-  map_public_ip_on_launch = false
+  map_public_ip_on_launch = true
   availability_zone       = "us-east-1a"
   tags = {
     Name = "public-subnet1"
@@ -35,20 +35,21 @@ resource "aws_subnet" "public-subnet1" {
 resource "aws_subnet" "public-subnet2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.subnet2_cidr
-  map_public_ip_on_launch = false
+  map_public_ip_on_launch = true
   availability_zone       = "us-east-1b"
   tags = {
     Name = "public-subnet2"
   }
 }
 
-#private-subnet1 creation
-resource "aws_subnet" "private-subnet1" {
+#public-subnet3 creation
+resource "aws_subnet" "public-subnet3" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.subnet3_cidr
+  map_public_ip_on_launch = true
   availability_zone = "us-east-1b"
   tags = {
-    Name = "private-subnet1"
+    Name = "public-subnet3"
   }
 }
 
@@ -79,6 +80,10 @@ resource "aws_route_table_association" "route2" {
   route_table_id = aws_route_table.route.id
 }
 
+resource "aws_route_table_association" "route3" {
+  subnet_id = aws_subnet.public-subnet3.id
+  route_table_id = aws_route_table.route.id
+}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -120,7 +125,7 @@ resource "aws_security_group" "vms" {
 
   # SSH
   ingress {
-    from_port   = 22
+    from_port   = 0
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -128,7 +133,7 @@ resource "aws_security_group" "vms" {
 
   # HTTP in
   ingress {
-    from_port   = 0
+    from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -136,7 +141,7 @@ resource "aws_security_group" "vms" {
   
   # HTTP in
   ingress {
-    from_port   = 0
+    from_port   = 81
     to_port     = 81
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -144,7 +149,7 @@ resource "aws_security_group" "vms" {
 
   # PostgreSQL in
   ingress {
-    from_port   = 0
+    from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = local.allowed_cidrs_for_db
@@ -166,6 +171,13 @@ resource "aws_security_group" "vms" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  egress {
+    from_port   = 81
+    to_port     = 81
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # HTTPS out
   egress {
     from_port   = 443
@@ -181,14 +193,6 @@ resource "aws_security_group" "vms" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # HTTP out
-  egress {
-    from_port   = 81
-    to_port     = 81
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
 resource "aws_instance" "servers" {
@@ -196,10 +200,10 @@ resource "aws_instance" "servers" {
 
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
-  subnet_id = each.key == "db" ? aws_subnet.private-subnet1.id : aws_subnet.public-subnet1.id
+  subnet_id = each.key == "db" ? aws_subnet.public-subnet3.id : aws_subnet.public-subnet1.id
   key_name        = aws_key_pair.admin.key_name
   security_groups = [aws_security_group.vms.id]
-  associate_public_ip_address = true
+# associate_public_ip_address = true
 
   tags = {
     Name = "${each.key}"

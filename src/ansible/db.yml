@@ -1,0 +1,4 @@
+db_servers:
+  hosts:
+    db1:
+      ansible_host: '44.213.250.198' # Fill in your "db" instance's public IP address here

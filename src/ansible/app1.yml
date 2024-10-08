@@ -1,0 +1,4 @@
+app1_servers:
+  hosts:
+    app1:
+      ansible_host: '54.242.87.200' 
