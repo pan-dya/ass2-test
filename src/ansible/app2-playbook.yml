@@ -42,7 +42,7 @@
         image: mattcul/assignment2app:1.0.0
         env:
           PORT: "3001"            
-          DB_HOSTNAME: "10.0.3.117"
+          DB_HOSTNAME: "{{ db_hostname }}"
           DB_PORT: "5432"
           DB_USERNAME: pete
           DB_PASSWORD: devops

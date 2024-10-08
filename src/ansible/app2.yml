@@ -1,4 +1,4 @@
 app2_servers:
   hosts:
     app2:
-      ansible_host: '18.232.95.57' 
+      ansible_host: '3.87.115.88' # Fill in your "app" instance's public IP address here

@@ -1,4 +1,12 @@
 terraform {
+  backend "s3" {
+    bucket         = "s4115252-s4115477-s3bucket"          # Name of the S3 bucket created for state storage
+    key            = "terraform/state/terraform.tfstate" # Path in the bucket where the state file will be stored
+    region         = "us-east-1"                # Region of the S3 bucket
+    dynamodb_table = "foostatelock"             # DynamoDB table for state locking
+    encrypt        = true                       # Encrypt the state file
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
