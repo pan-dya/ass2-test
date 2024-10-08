@@ -26,19 +26,27 @@ terraform apply
 db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')
 
 # Get the public IP addresses of the app and db instances
-app_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app.public_ip_address')
+app1_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app1.public_ip_address')
+app2_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app2.public_ip_address')
 db_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.public_ip_address')
 
 # Generate inventory1.yml for app servers
-cat <<EOL > ../ansible/inventory1.yml
-app_servers:
+cat <<EOL > ../ansible/app1.yml
+app1_servers:
   hosts:
     app1:
-      ansible_host: '$app_public_ip' # Fill in your "app" instance's public IP address here
+      ansible_host: '$app1_public_ip' # Fill in your "app" instance's public IP address here
+EOL
+
+cat <<EOL > ../ansible/app2.yml
+app2_servers:
+  hosts:
+    app2:
+      ansible_host: '$app2_public_ip' # Fill in your "app" instance's public IP address here
 EOL
 
 # Generate inventory2.yml for db servers
-cat <<EOL > ../ansible/inventory2.yml
+cat <<EOL > ../ansible/db.yml
 db_servers:
   hosts:
     db1:
@@ -50,9 +58,12 @@ cd ansible
 
 # Run the Ansible playbooks
 echo "Running Ansible playbook for the database"
-ansible-playbook db-playbook.yml -i inventory2.yml --private-key $path_to_ssh_key
+ansible-playbook db-playbook.yml -i db.yml --private-key $path_to_ssh_key
 
-echo "Running Ansible playbook for the app"
-ansible-playbook app-playbook.yml -i inventory1.yml --private-key $path_to_ssh_key --extra-vars "db_hostname=$db_private_ip"
+echo "Running Ansible playbook for app1"
+ansible-playbook app1-playbook.yml -i app1.yml --private-key $path_to_ssh_key --extra-vars "db_hostname=$db_private_ip"
+
+echo "Running Ansible playbook for app2"
+ansible-playbook app1-playbook.yml -i app1.yml --private-key $path_to_ssh_key --extra-vars "db_hostname=$db_private_ip"
 
 echo "Deployment completed successfully!"
