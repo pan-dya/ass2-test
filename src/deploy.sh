@@ -32,7 +32,7 @@ echo "Validating Terraform Configuration"
 terraform validate
 
 echo "Running terraform apply"
-terraform apply
+terraform apply --auto-approve
 
 # Get the private IP address of the database
 db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')
@@ -76,6 +76,6 @@ echo "Running Ansible playbook for app1"
 ansible-playbook app1-playbook.yml -i app1.yml --private-key $path_to_ssh_key --extra-vars "db_hostname=$db_private_ip"
 
 echo "Running Ansible playbook for app2"
-ansible-playbook app1-playbook.yml -i app1.yml --private-key $path_to_ssh_key --extra-vars "db_hostname=$db_private_ip"
+ansible-playbook app2-playbook.yml -i app2.yml --private-key $path_to_ssh_key --extra-vars "db_hostname=$db_private_ip"
 
 echo "Deployment completed successfully!"
