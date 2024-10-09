@@ -12,17 +12,7 @@ aws sts get-caller-identity
 
 path_to_ssh_key="~/.ssh/id_rsa"
 
-cd misc
-echo "Initializing Terraform for S3 Bucket"
-terraform init
 
-echo "Validating Terraform Configuration"
-terraform validate
-
-echo "Running terraorm apply"
-terraform apply
-
-cd..
 cd infra
 
 echo "Initializing Terraform"
