@@ -12,7 +12,17 @@ aws sts get-caller-identity
 
 path_to_ssh_key="~/.ssh/id_rsa"
 
+cd misc
+echo "Initializing Terraform for S3 Bucket"
+terraform init
 
+echo "Validating Terraform Configuration"
+terraform validate
+
+echo "Running Terraform apply"
+terraform apply --auto-approve
+
+cd ..
 cd infra
 
 echo "Initializing Terraform"
@@ -21,7 +31,7 @@ terraform init
 echo "Validating Terraform Configuration"
 terraform validate
 
-echo "Running terraform apply"
+echo "Running Terraform apply"
 terraform apply --auto-approve
 
 # Get the private IP address of the database

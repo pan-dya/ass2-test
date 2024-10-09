@@ -1,4 +1,11 @@
 terraform {
+  backend "s3" {
+    bucket         = "s4115252-s4115477-s3bucket"
+    key            = "terraform/state/terraform.tfstate"
+    dynamodb_table = "foostatelock"
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
