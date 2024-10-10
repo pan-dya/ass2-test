@@ -200,7 +200,7 @@ resource "aws_instance" "servers" {
 
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
-  subnet_id = each.key == "db" ? aws_subnet.public-subnet3.id : aws_subnet.public-subnet1.id
+  subnet_id = each.key == "db" ? aws_subnet.public-subnet3.id : each.key == "app1" ? aws_subnet.public-subnet1.id : aws_subnet.public-subnet2.id
   key_name        = aws_key_pair.admin.key_name
   security_groups = [aws_security_group.vms.id]
 # associate_public_ip_address = true
