@@ -1,6 +1,6 @@
 ---
 - name: Deploy Foo Application
-  hosts: app_servers
+  hosts: app1_servers
   remote_user: ubuntu
   become: yes
   tasks:
@@ -42,7 +42,7 @@
         image: mattcul/assignment2app:1.0.0
         env:
           PORT: "3001"
-          DB_HOSTNAME: "{{ db_hostname }}"
+          DB_HOSTNAME: "{{db_hostname}}"
           DB_PORT: "5432"
           DB_USERNAME: pete
           DB_PASSWORD: devops

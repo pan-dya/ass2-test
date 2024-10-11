@@ -3,7 +3,7 @@ terraform {
 }
 
 resource "aws_s3_bucket" "state_bucket" {
-  bucket = "foostatebucket1"
+  bucket = "s4115252-s4115477-s3bucket"
   acl    = "private"
 
   versioning {
