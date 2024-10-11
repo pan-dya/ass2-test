@@ -12,7 +12,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
-      PATH_TO_SSH_KEY: ${{ secrets.PATH_TO_SSH_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
       - name: Checkout repository
@@ -26,6 +26,13 @@ jobs:
       - name: AWS CLI - Configure
         run: |
           aws sts get-caller-identity
+          - name: Create SSH Key File
+          run: |
+            mkdir -p ~/.ssh  # Ensure the .ssh directory exists
+            cd ~/.ssh
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > new_id_rsa
+            chmod 600 new_id_rsa  # Secure the new_id_rsa key file
+          shell: bash
 
       - name: Configure Terraform variables in you.auto.tfvars
         run: |
