@@ -26,7 +26,7 @@ cd ..
 cd infra
 
 echo "Initializing Terraform"
-terraform init
+terraform init --migrate-state
 
 echo "Validating Terraform Configuration"
 terraform validate

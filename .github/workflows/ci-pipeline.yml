@@ -31,15 +31,21 @@ jobs:
         run: |
           mkdir -p ~/.ssh  # Ensure the .ssh directory exists
           cd ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > new_id_rsa
-          chmod 600 new_id_rsa  # Secure the new_id_rsa key file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > new_id_rsa  # Store the private key
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > new_id_rsa.pub  # Store the public key
+          chmod 600 new_id_rsa  # Secure the private key file
+          chmod 644 new_id_rsa.pub  # Set correct permissions for the public key
         shell: bash
-      - name: Configure Terraform variables in you.auto.tfvars
-        run: |
-          cd src/infra
-          echo "path_to_ssh_public_key = \"$PATH_TO_SSH_KEY\"" > you.auto.tfvars
-          echo "my_ip_address = \"$IP_ADDRESS\"" >> you.auto.tfvars
 
+      - name: Create Terraform variable file
+        working-directory: ./src/infra
+        run: |
+          cat <<EOL > ./you.auto.tfvars
+          path_to_ssh_public_key="~/.ssh/new_id_rsa.pub"
+          my_ip_address="${{ secrets.MY_IP_ADDRESS }}"
+          allow_all_ip_addresses_to_access_database_server=true
+          EOL
+          
       - name: Initialize, Validate, and Apply Terraform (Misc)
         working-directory: src/misc
         run: |
@@ -50,10 +56,10 @@ jobs:
       - name: Initialize, Validate, and Apply Terraform (Infra)
         working-directory: src/infra
         run: |
-          terraform init
+          terraform init --migrate-state
           terraform validate
           terraform apply --auto-approve
-
+      
       - name: Capture Terraform Outputs
         id: terraform_output
         working-directory: src/infra
