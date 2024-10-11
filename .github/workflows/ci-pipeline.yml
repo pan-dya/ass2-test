@@ -8,9 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    environment: ass2-test
 
     steps:
       - name: Checkout repository
@@ -22,12 +20,12 @@ jobs:
           sudo apt-get install -y jq ansible unzip
 
       - name: AWS CLI - Configure
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
+          aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{secrets.AWS_SESSION-TOKEN}}
-          aws-region: us-east-1
 
       - name: Create SSH Key File
         run: |
@@ -96,13 +94,13 @@ jobs:
         run: |
           cd src/ansible
           echo "Running Ansible playbook for the database"
-          ansible-playbook db-playbook.yml -i db.yml --private-key ${{ secrets.PATH_TO_SSH_KEY }}
+          ansible-playbook db-playbook.yml -i db.yml --private-key ~/.ssh/new_id_rsa
 
           echo "Running Ansible playbook for app1"
-          ansible-playbook app1-playbook.yml -i app1.yml --private-key ${{ secrets.PATH_TO_SSH_KEY }} --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
+          ansible-playbook app1-playbook.yml -i app1.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
 
           echo "Running Ansible playbook for app2"
-          ansible-playbook app2-playbook.yml -i app2.yml --private-key ${{ secrets.PATH_TO_SSH_KEY }} --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
+          ansible-playbook app2-playbook.yml -i app2.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
 
       - name: Finalize
         run: echo "Deployment completed successfully!"
