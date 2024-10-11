@@ -24,7 +24,7 @@ terraform apply --auto-approve
 
 cd ..
 cd infra
-
+# abc
 echo "Initializing Terraform"
 terraform init --migrate-state
 
