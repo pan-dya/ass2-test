@@ -49,7 +49,7 @@ jobs:
       - name: Initialize, Validate, and Apply Terraform (Misc)
         working-directory: src/misc
         run: |
-          terraform init
+          terraform init --upgrade
           terraform validate
           terraform apply --auto-approve
 
