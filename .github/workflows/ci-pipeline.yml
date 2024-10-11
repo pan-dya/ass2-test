@@ -20,7 +20,7 @@ jobs:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
 
       - name: Install dependencies
         run: |
@@ -64,49 +64,52 @@ jobs:
         id: terraform_output
         working-directory: src/infra
         run: |
-          db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')
-          app1_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app1.public_ip_address')
-          app2_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app2.public_ip_address')
-          db_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.public_ip_address')
-          echo "::set-output name=db_private_ip::$db_private_ip"
-          echo "::set-output name=app1_public_ip::$app1_public_ip"
-          echo "::set-output name=app2_public_ip::$app2_public_ip"
-          echo "::set-output name=db_public_ip::$db_public_ip"
+          echo "db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')" >> $GITHUB_ENV
+          echo "app1_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app1.public_ip_address')" >> $GITHUB_ENV
+          echo "app2_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app2.public_ip_address')" >> $GITHUB_ENV
+          echo "db_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.public_ip_address')" >> $GITHUB_ENV
+
+      - name: Wait for Cloud-Init Completion on App and DB Servers
+        run: |
+          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/new_id_rsa ubuntu@${{ env.app1_public_ip }} "cloud-init status -w"
+          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/new_id_rsa ubuntu@${{ env.app2_public_ip }} "cloud-init status -w"
+          ssh -o "StrictHostKeyChecking no" -i ~/.ssh/new_id_rsa ubuntu@${{ env.db_public_ip }} "cloud-init status -w"
 
       - name: Generate Ansible inventory files
+        working-directory: src/ansible
         run: |
-          cat <<EOL > ../ansible/app1.yml
+          cat <<EOL > app1.yml
           app1_servers:
             hosts:
               app1:
-                ansible_host: '${{ steps.terraform_output.outputs.app1_public_ip }}'
+                ansible_host: '${{ env.app1_public_ip }}'
           EOL
 
-          cat <<EOL > ../ansible/app2.yml
+          cat <<EOL > app2.yml
           app2_servers:
             hosts:
               app2:
-                ansible_host: '${{ steps.terraform_output.outputs.app2_public_ip }}'
+                ansible_host: '${{ env.app2_public_ip }}'
           EOL
 
-          cat <<EOL > ../ansible/db.yml
+          cat <<EOL > db.yml
           db_servers:
             hosts:
               db1:
-                ansible_host: '${{ steps.terraform_output.outputs.db_public_ip }}'
+                ansible_host: '${{ env.db_public_ip }}'
           EOL
 
       - name: Run Ansible Playbooks
+        working-directory: src/ansible
         run: |
-          cd src/ansible
           echo "Running Ansible playbook for the database"
           ansible-playbook db-playbook.yml -i db.yml --private-key ~/.ssh/new_id_rsa
 
           echo "Running Ansible playbook for app1"
-          ansible-playbook app1-playbook.yml -i app1.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
+          ansible-playbook app1-playbook.yml -i app1.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ env.db_private_ip }}"
 
           echo "Running Ansible playbook for app2"
-          ansible-playbook app2-playbook.yml -i app2.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
+          ansible-playbook app2-playbook.yml -i app2.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ env.db_private_ip }}"
 
       - name: Finalize
         run: echo "Deployment completed successfully!"
