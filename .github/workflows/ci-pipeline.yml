@@ -9,6 +9,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
       PATH_TO_SSH_KEY: ${{ secrets.PATH_TO_SSH_KEY }}
 
@@ -16,24 +18,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ansible unzip
 
-      - name: Verify AWS credentials
-        run: aws sts get-caller-identity
+      - name: AWS CLI - Configure
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws sts get-caller-identity
 
       - name: Configure Terraform variables in you.auto.tfvars
         run: |
           cd src/infra
-          cat <<EOL > ./you.auto.tfvars
-          path_to_ssh_public_key="${{ secrets.SSH_PUBLIC_KEY_PATH }}"
-          my_ip_address="${{ secrets.MY_IP_ADDRESS }}"
-          allow_all_ip_addresses_to_access_database_server=true
-          EOL
+          echo "path_to_ssh_public_key = \"$PATH_TO_SSH_KEY\"" > you.auto.tfvars
+          echo "my_ip_address = \"$IP_ADDRESS\"" >> you.auto.tfvars
 
       - name: Initialize, Validate, and Apply Terraform (Misc)
         working-directory: src/misc
