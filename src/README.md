@@ -62,6 +62,8 @@ The app is deployed on two EC2 instances behind a load balancer, ensuring high a
 
 ## Deployment process
 
+### Steps to Deploy
+
 1. **Infrastructure Provisioning**:
 Terraform is used to provision the required infrastructure (EC2 instances, load balancer, S3 bucket).
 A remote backend (S3) is used for Terraform state to ensure shared and consistent state management.
@@ -72,18 +74,48 @@ GitHub Actions automates the entire process. It triggers the deployment when cha
 
 ![Process Flow Diagram](img/process_flow.png)
 
-### Steps to Deploy
-
 ## Prerequisites
+
+1. **AWS Credentials**: Ensure AWS credentials are properly configured for Terraform and Ansible to interact with AWS resources.
+2. **Docker**: The app and PostgreSQL database are deployed as Docker containers. The Docker image for the Foo app can be pulled from `mattcul/assignment2app`.
+3. **Terraform**: Terraform should be installed locally or as part of a CI/CD pipeline.
+4. **Ansible**: Ansible playbooks are used to configure the EC2 instances.
+5. **GitHub Actions**: Workflows are defined to trigger deployment automatically upon code changes.
 
 ## Description of the GitHub Actions workflow
 
 ### Triggering Mechanism
 
+The workflow triggers:
+
+- **Automatically**: When the `main` branch is modified
+
 ## Backup Process: Deploying from a Shell Script
+
+As a fallback mechanism, the infrastructure and deployment can be done manually using a shell script. The script performs the following steps:
+
+1. Creates the EC2 instances, load balancer, and S3 bucket using Terraform.
+2. Configures the EC2 instances using Ansible to deploy the app and database containers.
+3. Starts the Docker containers for both the app and PostgreSQL.
+
+This script can be used if the GitHub Actions workflow encounters any issues.
 
 ## Validating that the App is Working
 
 ## Contents of This repo
 
+1. **Terraform Configurations**:
 
+Files for provisioning EC2 instances, the load balancer, and remote state using S3.
+
+2. **Ansible Playbooks**:
+
+Playbooks for configuring EC2 instances (installing Docker, setting up containers for the app and database).
+
+3. **Shell Script**:
+
+A script that automates the deployment manually, serving as a backup.
+
+4. **GitHub Actions Workflow**:
+
+A YAML file that defines the workflow for automating the deployment via GitHub Actions.
