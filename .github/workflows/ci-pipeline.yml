@@ -14,18 +14,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq ansible unzip
-
       - name: AWS CLI - Configure
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{secrets.AWS_SESSION-TOKEN}}
+          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ansible unzip
 
       - name: Create SSH Key File
         run: |
