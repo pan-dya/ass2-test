@@ -1,4 +1,4 @@
-name: Deploy Infrastructure and Run Ansible
+name: Deploy Infrastructure and Run Ansible a
 
 on:
   push:
