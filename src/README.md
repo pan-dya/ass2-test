@@ -57,7 +57,20 @@ The app is deployed on two EC2 instances behind a load balancer, ensuring high a
 
 ## Key data flows
 
+- **User Traffic**: Users interact with the Foo app via a load balancer, which distributes traffic between the two EC2 instances running the app.
+- **App-Database Interaction**: The app communicates with the PostgreSQL database instance over a private network, ensuring secure access to data.
+
 ## Deployment process
+
+1. **Infrastructure Provisioning**:
+Terraform is used to provision the required infrastructure (EC2 instances, load balancer, S3 bucket).
+A remote backend (S3) is used for Terraform state to ensure shared and consistent state management.
+2. **Configuration**:
+Ansible is used to configure the EC2 instances (install Docker, pull the app container, and configure PostgreSQL on a separate instance).
+3. **Automation**:
+GitHub Actions automates the entire process. It triggers the deployment when changes are made to the main branch.
+
+![Process Flow Diagram](img/process_flow.png)
 
 ### Steps to Deploy
 
