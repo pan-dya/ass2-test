@@ -1,4 +1,4 @@
-name: Deploy Infrastructure and Run Ansible
+name: Deploy Infrastructure and Run Ansible a
 
 on:
   push:
@@ -51,6 +51,7 @@ jobs:
           terraform init --upgrade
           terraform validate
           terraform apply --auto-approve
+
       - name: Initialize, Validate, and Apply Terraform (Infra)
         working-directory: src/infra
         run: |
