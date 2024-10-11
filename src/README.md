@@ -49,7 +49,7 @@ Key tools used:
 - **Database Instance**: A separate EC2 instance running PostgreSQL.
 - **Remote Backend**: Terraform uses S3 bucket for storing state, ensuring consistency and resiliency in infrastructure management.
 
-![Architecture Diagram](img/architecture-diagram.jpg)
+![Architecture Diagram](img/architecture_diagram.png)
 
 ### Resiliency Improvements
 
