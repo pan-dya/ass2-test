@@ -57,7 +57,6 @@ app2_servers:
       ansible_host: '$app2_public_ip' # Fill in your "app" instance's public IP address here
 EOL
 
-# Generate inventory2.yml for db servers
 cat <<EOL > ../ansible/db.yml
 db_servers:
   hosts:

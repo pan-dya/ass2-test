@@ -1,4 +1,4 @@
-name: Deploy Foo App
+name: Deploy Infrastructure and Run Ansible
 
 on:
   push:
@@ -8,98 +8,94 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
-      PATH_TO_SSH_KEY: ${{secrets.PATH_TO_SSH_KEY}}
-      IP_ADDRESS: ${{secrets.IP_ADDRESS}}
+      IP_ADDRESS: ${{ secrets.IP_ADDRESS }}
+      PATH_TO_SSH_KEY: ${{ secrets.PATH_TO_SSH_KEY }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
       - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Test AWS credentials
+      - name: Verify AWS credentials
         run: aws sts get-caller-identity
 
-      - name: Initialize Terraform for S3 Bucket
-        working-directory: ./misc
-        run: terraform init
-
-      - name: Validate Terraform Configuration (S3 Bucket)
-        working-directory: ./misc
-        run: terraform validate
-
-      - name: Apply Terraform (S3 Bucket)
-        working-directory: ./misc
-        run: terraform apply --auto-approve
-
-      - name: Initialize Terraform for Infrastructure
-        working-directory: ./infra
-        run: terraform init
-
-      - name: Validate Terraform Configuration (Infrastructure)
-        working-directory: ./infra
-        run: terraform validate
-
-      - name: Apply Terraform (Infrastructure)
-        working-directory: ./infra
-        run: terraform apply --auto-approve
-
-      - name: Get Terraform output - IP addresses
-        id: terraform_output
-        working-directory: ./infra
+      - name: Configure Terraform variables in you.auto.tfvars
         run: |
+          cd src/infra
+          cat <<EOL > ./you.auto.tfvars
+          path_to_ssh_public_key="${{ secrets.SSH_PUBLIC_KEY_PATH }}"
+          my_ip_address="${{ secrets.MY_IP_ADDRESS }}"
+          allow_all_ip_addresses_to_access_database_server=true
+          EOL
+
+      - name: Initialize, Validate, and Apply Terraform (Misc)
+        working-directory: src/misc
+        run: |
+          terraform init
+          terraform validate
+          terraform apply --auto-approve
+
+      - name: Initialize, Validate, and Apply Terraform (Infra)
+        working-directory: src/infra
+        run: |
+          terraform init
+          terraform validate
+          terraform apply --auto-approve
+
+      - name: Capture Terraform Outputs
+        id: terraform_output
+        working-directory: src/infra
+        run: |
+          db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')
           app1_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app1.public_ip_address')
           app2_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.app2.public_ip_address')
           db_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.public_ip_address')
-          db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')
-          
+          echo "::set-output name=db_private_ip::$db_private_ip"
           echo "::set-output name=app1_public_ip::$app1_public_ip"
           echo "::set-output name=app2_public_ip::$app2_public_ip"
           echo "::set-output name=db_public_ip::$db_public_ip"
-          echo "::set-output name=db_private_ip::$db_private_ip"
 
-      - name: Generate inventory1.yml for app1
+      - name: Generate Ansible inventory files
         run: |
-          cat <<EOL > ./ansible/app1.yml
+          cat <<EOL > ../ansible/app1.yml
           app1_servers:
             hosts:
               app1:
                 ansible_host: '${{ steps.terraform_output.outputs.app1_public_ip }}'
           EOL
 
-      - name: Generate inventory2.yml for app2
-        run: |
-          cat <<EOL > ./ansible/app2.yml
+          cat <<EOL > ../ansible/app2.yml
           app2_servers:
             hosts:
               app2:
                 ansible_host: '${{ steps.terraform_output.outputs.app2_public_ip }}'
           EOL
 
-      - name: Generate db.yml for database
-        run: |
-          cat <<EOL > ./ansible/db.yml
+          cat <<EOL > ../ansible/db.yml
           db_servers:
             hosts:
               db1:
                 ansible_host: '${{ steps.terraform_output.outputs.db_public_ip }}'
           EOL
 
-      - name: Run Ansible playbook for the database
-        run: ansible-playbook db-playbook.yml -i ansible/db.yml --private-key ${{ env.PATH_TO_SSH_KEY }}
+      - name: Run Ansible Playbooks
+        run: |
+          cd src/ansible
+          echo "Running Ansible playbook for the database"
+          ansible-playbook db-playbook.yml -i db.yml --private-key ${{ secrets.PATH_TO_SSH_KEY }}
 
-      - name: Run Ansible playbook for app1
-        run: ansible-playbook app1-playbook.yml -i ansible/app1.yml --private-key ${{ env.PATH_TO_SSH_KEY }} --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
+          echo "Running Ansible playbook for app1"
+          ansible-playbook app1-playbook.yml -i app1.yml --private-key ${{ secrets.PATH_TO_SSH_KEY }} --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
 
-      - name: Run Ansible playbook for app2
-        run: ansible-playbook app2-playbook.yml -i ansible/app2.yml --private-key ${{ env.PATH_TO_SSH_KEY }} --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
+          echo "Running Ansible playbook for app2"
+          ansible-playbook app2-playbook.yml -i app2.yml --private-key ${{ secrets.PATH_TO_SSH_KEY }} --extra-vars "db_hostname=${{ steps.terraform_output.outputs.db_private_ip }}"
 
-      - name: Deployment completed
+      - name: Finalize
         run: echo "Deployment completed successfully!"
