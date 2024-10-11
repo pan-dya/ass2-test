@@ -99,15 +99,21 @@ jobs:
                 ansible_host: '${{ env.db_public_ip }}'
           EOL
 
-      - name: Run Ansible Playbooks
+      - name: Run Ansible db Playbook
         working-directory: src/ansible
         run: |
           echo "Running Ansible playbook for the database"
           ansible-playbook db-playbook.yml -i db.yml --private-key ~/.ssh/new_id_rsa
 
+      - name: Run Ansible app1 Playbook
+        working-directory: src/ansible
+        run: |
           echo "Running Ansible playbook for app1"
           ansible-playbook app1-playbook.yml -i app1.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ env.db_private_ip }}"
 
+      - name: Run Ansible app2 Playbook
+        working-directory: src/ansible
+        run: |
           echo "Running Ansible playbook for app2"
           ansible-playbook app2-playbook.yml -i app2.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ env.db_private_ip }}"
 
