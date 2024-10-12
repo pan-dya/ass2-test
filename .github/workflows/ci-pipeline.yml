@@ -177,7 +177,7 @@ jobs:
 
       - name: Finalize
         run: |
-          if [ "${{ env.skip_terraform_infra }}" = "false" ]; then
+          if [ "${ env.skip_terraform_infra }" = "false" ]; then
             echo "No changes were deployed."
           else
             echo "Deployment completed successfully!"
