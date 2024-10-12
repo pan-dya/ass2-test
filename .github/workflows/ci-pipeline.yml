@@ -117,6 +117,7 @@ jobs:
 
       - name: Capture Terraform Outputs
         id: terraform_output
+        if: env.skip_terraform_infra == 'false'
         working-directory: src/infra
         run: |
           echo "db_private_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.private_ip_address')" >> $GITHUB_ENV
@@ -125,6 +126,7 @@ jobs:
           echo "db_public_ip=$(terraform output -json vm_ip_addresses | jq -r '.db.public_ip_address')" >> $GITHUB_ENV
 
       - name: Wait for Cloud-Init Completion on App and DB Servers
+        if: env.skip_terraform_infra == 'false'
         run: |
           ssh -o "StrictHostKeyChecking no" -i ~/.ssh/new_id_rsa ubuntu@${{ env.app1_public_ip }} "cloud-init status -w"
           ssh -o "StrictHostKeyChecking no" -i ~/.ssh/new_id_rsa ubuntu@${{ env.app2_public_ip }} "cloud-init status -w"
