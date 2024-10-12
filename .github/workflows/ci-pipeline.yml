@@ -41,15 +41,15 @@ jobs:
         run: |
           cat <<EOL > ./you.auto.tfvars
           path_to_ssh_public_key="~/.ssh/new_id_rsa.pub"
-          my_ip_address="${{ secrets.MY_IP_ADDRESS }}"
+          my_ip_address="${{ secrets.IP_ADDRESS }}"
           allow_all_ip_addresses_to_access_database_server=true
           EOL
           
-          - name: Initialize and Validate Terraform (Misc)
-          working-directory: src/misc
-          run: |
-            terraform init --upgrade
-            terraform validate
+      - name: Initialize and Validate Terraform (Misc)
+        working-directory: src/misc
+        run: |
+          terraform init --upgrade
+          terraform validate
   
       - name: Plan Terraform (Misc)
         working-directory: src/misc
@@ -78,7 +78,7 @@ jobs:
         working-directory: src/infra
         if: steps.terraform_plan_infra.outcome == 'success'
         run: terraform apply --auto-approve tfplan-infra      
-        
+
       - name: Capture Terraform Outputs
         id: terraform_output
         working-directory: src/infra
