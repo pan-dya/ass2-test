@@ -26,6 +26,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq ansible unzip
+
       - name: Create SSH Key File
         run: |
           mkdir -p ~/.ssh  # Ensure the .ssh directory exists
@@ -35,7 +36,7 @@ jobs:
           chmod 600 new_id_rsa  # Secure the private key file
           chmod 644 new_id_rsa.pub  # Set correct permissions for the public key
         shell: bash
-
+        
       - name: Create Terraform variable file
         working-directory: ./src/infra
         run: |
@@ -44,30 +45,44 @@ jobs:
           my_ip_address="${{ secrets.IP_ADDRESS }}"
           allow_all_ip_addresses_to_access_database_server=true
           EOL
-          
-      - name: Initialize and Validate Terraform (Misc)
+      
+      - name: Check if S3 Bucket Exists
+        id: check_s3
+        run: |
+          if aws s3api head-bucket --bucket "s4115252-s4115477-s3bucket" 2>/dev/null; then
+            echo "S3 bucket exists."
+            echo "skip_terraform_misc=true" >> $GITHUB_ENV
+          else
+            echo "S3 bucket does not exist."
+            echo "skip_terraform_misc=false" >> $GITHUB_ENV
+          fi
+
+      - name: Check if DynamoDB Table Exists
+        id: check_dynamodb
+        run: |
+          TABLE_NAME="${{ secrets.DYNAMODB_TABLE_NAME }}"
+          if aws dynamodb describe-table --table-name "foostatelock" 2>/dev/null; then
+            echo "DynamoDB table exists."
+            echo "skip_terraform_misc=true" >> $GITHUB_ENV
+          else
+            echo "DynamoDB table does not exist."
+            echo "skip_terraform_misc=false" >> $GITHUB_ENV
+          fi
+
+      - name: Initialize, Validate, and Apply Terraform (Misc)
+        if: env.skip_terraform_misc == 'false'
         working-directory: src/misc
         run: |
           terraform init --upgrade
           terraform validate
-  
-      - name: Plan Terraform (Misc)
-        working-directory: src/misc
-        id: terraform_plan_misc
-        run: terraform plan -out=tfplan-misc
-        continue-on-error: true
+          terraform apply --auto-approve
 
-      - name: Apply Terraform (Misc) if Changes
-        working-directory: src/misc
-        if: steps.terraform_plan_misc.outcome == 'success'
-        run: terraform apply --auto-approve tfplan-misc
-
-      - name: Initialize and Validate Terraform (Infra)
+      - name: Initialize, Validate, and Apply Terraform (Infra)
         working-directory: src/infra
         run: |
           terraform init --migrate-state
           terraform validate
-
+      
       - name: Plan Terraform (Infra)
         working-directory: src/infra
         id: terraform_plan_infra
@@ -77,7 +92,7 @@ jobs:
       - name: Apply Terraform (Infra) if Changes
         working-directory: src/infra
         if: steps.terraform_plan_infra.outcome == 'success'
-        run: terraform apply --auto-approve tfplan-infra      
+        run: terraform apply --auto-approve tfplan-infra
 
       - name: Capture Terraform Outputs
         id: terraform_output
