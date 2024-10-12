@@ -235,7 +235,7 @@ resource "aws_lb_target_group" "target_elb" {
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
   health_check {
-    path     = "/health"
+    path     = "/"
     port     = 80
     protocol = "HTTP"
   }
