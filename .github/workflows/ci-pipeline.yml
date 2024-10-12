@@ -176,10 +176,5 @@ jobs:
           ansible-playbook app2-playbook.yml -i app2.yml --private-key ~/.ssh/new_id_rsa --extra-vars "db_hostname=${{ env.db_private_ip }}"
 
       - name: Finalize
-        run: |
-          if [ "${ env.skip_terraform_infra }" = "false" ]; then
-            echo "No changes were deployed."
-          else
-            echo "Deployment completed successfully!"
-          fi
+        run: echo "Deployment completed successfully!"
   
