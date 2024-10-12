@@ -45,20 +45,40 @@ jobs:
           allow_all_ip_addresses_to_access_database_server=true
           EOL
           
-      - name: Initialize, Validate, and Apply Terraform (Misc)
+          - name: Initialize and Validate Terraform (Misc)
+          working-directory: src/misc
+          run: |
+            terraform init --upgrade
+            terraform validate
+  
+      - name: Plan Terraform (Misc)
         working-directory: src/misc
-        run: |
-          terraform init --upgrade
-          terraform validate
-          terraform apply --auto-approve
+        id: terraform_plan_misc
+        run: terraform plan -out=tfplan-misc
+        continue-on-error: true
 
-      - name: Initialize, Validate, and Apply Terraform (Infra)
+      - name: Apply Terraform (Misc) if Changes
+        working-directory: src/misc
+        if: steps.terraform_plan_misc.outcome == 'success'
+        run: terraform apply --auto-approve tfplan-misc
+
+      - name: Initialize and Validate Terraform (Infra)
         working-directory: src/infra
         run: |
           terraform init --migrate-state
           terraform validate
-          terraform apply --auto-approve
-      
+
+      - name: Plan Terraform (Infra)
+        working-directory: src/infra
+        id: terraform_plan_infra
+        run: terraform plan -out=tfplan-infra
+        continue-on-error: true
+
+      - name: Apply Terraform (Infra) if Changes
+        working-directory: src/infra
+        if: steps.terraform_plan_infra.outcome == 'success'
+        run: terraform apply --auto-approve tfplan-infra      
+        
       - name: Capture Terraform Outputs
         id: terraform_output
         working-directory: src/infra
