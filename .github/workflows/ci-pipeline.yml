@@ -60,7 +60,6 @@ jobs:
       - name: Check if DynamoDB Table Exists
         id: check_dynamodb
         run: |
-          TABLE_NAME="${{ secrets.DYNAMODB_TABLE_NAME }}"
           if aws dynamodb describe-table --table-name "foostatelock" 2>/dev/null; then
             echo "DynamoDB table exists."
             echo "skip_terraform_misc=true" >> $GITHUB_ENV
@@ -69,6 +68,23 @@ jobs:
             echo "skip_terraform_misc=false" >> $GITHUB_ENV
           fi
 
+      - name: Check if EC2 Instances Exist
+        id: check_ec2
+        run: |
+          db_count=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=db" --query "Reservations[*].Instances[*].InstanceId" --output text | wc -w)
+          app1_count=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=app1" --query "Reservations[*].Instances[*].InstanceId" --output text | wc -w)
+          app2_count=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=app2" --query "Reservations[*].Instances[*].InstanceId" --output text | wc -w)
+
+          if [ "$db_count" -gt 0 ] && [ "$app1_count" -gt 0 ] && [ "$app2_count" -gt 0 ]; then
+            echo "All EC2 instances exist."
+            echo "skip_terraform_infra=true" >> $GITHUB_ENV
+          else
+            echo "One or more EC2 instances are missing."
+            echo "skip_terraform_infra=false" >> $GITHUB_ENV
+          fi
+  
+
+      # Initialize, Validate, and Apply Terraform (Misc)
       - name: Initialize, Validate, and Apply Terraform (Misc)
         if: env.skip_terraform_misc == 'false'
         working-directory: src/misc
@@ -77,21 +93,26 @@ jobs:
           terraform validate
           terraform apply --auto-approve
 
+      # Initialize and Validate Terraform (Infra)
       - name: Initialize, Validate, and Apply Terraform (Infra)
+        if: env.skip_terraform_infra == 'false'
         working-directory: src/infra
         run: |
           terraform init --migrate-state
           terraform validate
       
+      # Plan Terraform (Infra)
       - name: Plan Terraform (Infra)
+        if: env.skip_terraform_infra == 'false'
         working-directory: src/infra
         id: terraform_plan_infra
         run: terraform plan -out=tfplan-infra
         continue-on-error: true
 
+      # Apply Terraform (Infra) if Changes
       - name: Apply Terraform (Infra) if Changes
+        if: env.skip_terraform_infra == 'false' && steps.terraform_plan_infra.outcome == 'success'
         working-directory: src/infra
-        if: steps.terraform_plan_infra.outcome == 'success'
         run: terraform apply --auto-approve tfplan-infra
 
       - name: Capture Terraform Outputs
